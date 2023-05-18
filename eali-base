@@ -1,0 +1,315 @@
+#!/usr/bin/bash
+set -eu
+
+########## VARIABLES ##########
+### ANSI ESCAPE code ###
+prefix="\e["
+suffix="m"
+SGRRESET="${prefix}${suffix}"
+BOLD="${prefix}1${suffix}"
+RED="${prefix}31${suffix}"
+GREEN="${prefix}32${suffix}"
+YELLOW="${prefix}33${suffix}"
+BLUE="${prefix}34${suffix}"
+MAGENTA="${prefix}35${suffix}"
+CYAN="${prefix}36${suffix}"
+WHITE="${prefix}37${suffix}"
+### FLAG ###
+FLAG=false
+
+########## functions ##########
+# error message
+error(){
+    printf "${RED}[error]${SGRRESET}: ${1}\n"
+}
+
+# confirmation message
+confirmation(){
+    printf "${CYAN}[confirmation]${SGRRESET}: ${1}\n"
+}
+
+########## Title ##########
+printf "\n${BOLD}${MAGENTA}EASY ARCHLINUX INSTALLER (Base system)${SGRRESET}\n\n"
+
+########## select install device ##########
+printf "These block devices are available on this computer\n"
+printf "==================================================\n"
+lsblk -dlp 
+printf "==================================================\n"
+
+### make devicelist ###
+devices=$(lsblk -dlnpo name)
+while read line
+do
+    devices_array+=("${line}") 
+done <<< ${devices}
+array_size=$((${#devices_array[@]}-1))
+PS3="which device? :"
+
+### select install device ###
+FLAG=false
+if [[ ! -v EALI_INSTALL_DEVICE_PATH || \
+    "$(echo ${devices} | grep ${EALI_INSTALL_DEVICE_PATH})" = "" ]]
+then
+    while true
+    do
+        read -ep "Type install device path : " EALI_INSTALL_DEVICE_PATH
+        for ((i=0;i<${#devices_array[@]};i++))
+        do  
+            if [[ "${devices_array[$i]}" == "${EALI_INSTALL_DEVICE_PATH}" ]]
+            then
+                FLAG=true
+            else
+                :
+            fi
+        done
+        if "${FLAG}" 
+        then
+            confirmation "Selected installation device path is '${EALI_INSTALL_DEVICE_PATH}'"
+            read -p " y|Y for yes, any other key for No : " str
+            case $str in
+                y|Y)
+                    echo ""
+                    break;;
+                *)
+                    echo "Please try again"
+                    FLAG=false;;
+            esac
+        else
+            error "invalid path : device '${EALI_INSTALL_DEVICE_PATH}' doesn't exists"
+        fi
+    done
+fi
+
+echo ""
+
+### Partition configuration
+if [[ ! -v EALI_SWAP_SIZE || "${EALI_SWAP_SIZE}" = "" ]]
+then
+    while true
+    do
+        read -ep "(Please type a integer) How many Gib of swap ? : " EALI_SWAP_SIZE
+        if [[ ! "$EALI_SWAP_SIZE" = "" ]]
+        then
+            confirmation "Swap size is '${EALI_SWAP_SIZE}'"
+            read -p " y|Y for yes, any other key for No : " str
+            case $str in
+                y|Y)
+                    echo ""
+                    break;;
+                *)
+                    echo "Please try again"
+            esac
+        else
+            error "invalid path : device '${EALI_SWAP_SIZE}' doesn't exists"
+        fi
+    done
+fi
+
+# make partition
+echo "Initializes the brock device : ${EALI_INSTALL_DEVICE_PATH}"
+echo "Data on this device will be lost"
+read -p " y|Y for yes, any other key for No : " str
+case $str in
+    y|Y)
+        wipefs -a ${EALI_INSTALL_DEVICE_PATH}
+        ;;
+    *)
+        echo "Stop the installation"
+        exit 0
+        ;;
+esac
+
+sgdisk -og ${EALI_INSTALL_DEVICE_PATH}
+sgdisk -n 1::+512M -c 1:"EFI system partition" \
+    -t 1:C12A7328-F81F-11D2-BA4B-00A0C93EC93B \
+    ${EALI_INSTALL_DEVICE_PATH}
+sgdisk -n 2::+${EALI_SWAP_SIZE}G -c 2:"Swap partition" \
+    -t 2:0657FD6D-A4AB-43C4-84E5-0933C84B4F4F \
+    ${EALI_INSTALL_DEVICE_PATH}
+sgdisk -n 3:: -c 3:"Root partition(x86-64)" \
+    -t 3:4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
+    ${EALI_INSTALL_DEVICE_PATH}
+
+# Set partition variables
+partitions=$(lsblk -lnpo name ${EALI_INSTALL_DEVICE_PATH} | tail -n+2)
+ESP_PARTITION=$(echo "${partitions}" | head -n 1)
+SWAP_PARTITION=$(echo "${partitions}" | head -n 2 | tail -n 1)
+ROOT_PARTITION=$(echo "${partitions}" | head -n 3 | tail -n 1)
+
+# Format partitions
+mkfs.fat -F 32 ${ESP_PARTITION} 
+mkswap ${SWAP_PARTITION} 
+mkfs.ext4 ${ROOT_PARTITION}
+
+# Mount partitions
+mount ${ROOT_PARTITION} /mnt
+swapon ${SWAP_PARTITION} 
+mkdir /mnt/boot
+mount ${ESP_PARTITION} /mnt/boot
+
+########## set hostname #######
+if [[ ! -v EALI_HOSTNAME || "${EALI_HOSTNAME})" = "" ]]
+then
+    while true
+    do
+        read -p "Type hostname : " EALI_HOSTNAME
+        if [[ "${EALI_HOSTNAME}" = "" ]]
+        then
+            error "invalid value : hostname value is empty"
+        else
+            confirmation " hostname is '${EALI_HOSTNAME}'"
+            read -p " y|Y for yes, any other key for No : " str
+            case $str in
+                y|Y)
+                    echo ""
+                    break;;
+                *)
+                    echo "Please try again";;
+            esac
+        fi
+    done
+fi 
+
+echo ""
+
+########## set root password ##########
+if [[ ! -v EALI_ROOT_PASSWD || "${EALI_ROOT_PASSWD})" = "" ]]
+then
+    while true
+    do
+        read -sp "Type root password : " rootpassword1
+        echo &&
+        read -sp "Retype root password : " rootpassword2
+        echo &&
+        if [[ "${rootpassword1}" = "" ]]
+        then
+            error "invalid value : ROOT_PASSWD value is empty"
+        elif [[ "${rootpassword1}" != "${rootpassword2}" ]]
+        then
+            error "password does not match"
+        else
+            EALI_ROOT_PASSWD=${rootpassword1}
+            break
+        fi
+    done
+fi 
+
+echo ""
+
+########## set username ##########
+if [[ ! -v EALI_USERNAME || "${EALI_USERNAME})" = "" ]]
+then
+    while true
+    do
+        read -p "Type username : " EALI_USERNAME
+        if [[ "${EALI_USERNAME}" = "" ]]
+        then
+            error "invalid value : username value is empty"
+        else
+            confirmation " username is '${EALI_USERNAME}'"
+            read -p " y|Y for yes, any other key for No : " str
+            case $str in
+                y|Y)
+                    echo ""
+                    break;;
+                *)
+                    echo "Please try again";;
+            esac
+        fi
+    done
+fi 
+
+echo ""
+
+########## set user password ##########
+if [[ ! -v EALI_USER_PASSWD || "${EALI_USER_PASSWD})" = "" ]]
+then
+    while true
+    do
+        read -sp "Type user password : " userpassword1
+        echo &&
+        read -sp "Retype user password : " userpassword2
+        echo &&
+        if [[ "${userpassword1}" = "" ]]
+        then
+            error "invalid value : USER_PASSWD value is empty"
+        elif [[ "${userpassword1}" != "${userpassword2}" ]]
+        then
+            error "password does not match"
+        else
+            EALI_USER_PASSWD=${userpassword1}
+            break
+        fi
+    done
+fi 
+
+echo ""
+
+########## installation ##########
+#Installation of required packages
+pacstrap -K /mnt base base-devel linux linux-firmware vim dhcpcd iwd openssh
+
+# Generating fstab
+genfstab -U /mnt >>/mnt/etc/fstab
+
+### arch-chroot ###
+# Time zone settings
+arch-chroot /mnt ln -sf /use/share/zoneinfo/Asia/Tokyo /etc/localtime
+arch-chroot /mnt hwclock --systohc
+
+sed -e 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' -i /mnt/etc/locale.gen
+sed -e 's/#ja_JP.UTF-8 UTF-8/ja_JP.UTF-8 UTF-8/' -i /mnt/etc/locale.gen
+arch-chroot /mnt locale-gen
+echo "LANG=en_US.UTF-8" >/mnt/locale.conf
+
+# Hostname
+echo ${EALI_HOSTNAME} > /mnt/etc/hostname
+# Root password
+arch-chroot /mnt passwd <<EOF
+${EALI_ROOT_PASSWD}
+${EALI_ROOT_PASSWD}
+EOF
+# User settings
+arch-chroot /mnt useradd -m -d /home/${EALI_USERNAME} -s /bin/bash -G wheel ${EALI_USERNAME}
+arch-chroot /mnt passwd ${EALI_USERNAME} <<EOF
+${EALI_USER_PASSWD}
+${EALI_USER_PASSWD}
+EOF
+cp /mnt/etc/sudoers ./sudoers
+sed -e 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' -i ./sudoers
+visudo -qcf ./sudoers
+if [[ "$?" = "0" ]]
+then
+    mv -f ./sudoers /mnt/etc/sudoers
+else
+    echo "\n"
+    error "Failed to edit /etc/sudoers"
+    exit 1
+fi
+
+# Bootloader
+pacstrap /mnt grub dosfstools efibootmgr
+arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=grub --recheck
+arch-chroot /mnt mkdir /boot/EFI/boot
+arch-chroot /mnt cp /boot/EFI/grub/grubx64.efi  /boot/EFI/boot/bootx64.efi
+arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+
+# dhcpcd
+arch-chroot /mnt systemctl enable dhcpcd
+
+# Install AUR helper (yay)
+pacstrap /mnt git go
+YAY_BIN=/home/${EALI_USERNAME}/yay-bin
+arch-chroot /mnt sudo -u ${EALI_USERNAME} git clone https://aur.archlinux.org/yay-bin.git ${YAY_BIN}
+arch-chroot /mnt bash -c "cd ${YAY_BIN} && sudo -u ${EALI_USERNAME} makepkg -si"
+rm -rf /mnt${YAY_BIN}
+
+# umount device
+umount -R /mnt
+
+########## Install finished ##########
+
+printf "\n\n==============================\n"
+printf "${GREEN}${BOLD}Successfully Installed!!${SGRRESET} \n"
+printf "==============================\n\n"

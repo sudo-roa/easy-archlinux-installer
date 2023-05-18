@@ -1,0 +1,145 @@
+#!/usr/bin/bash
+set -eu
+
+########## VARIABLES ##########
+### ANSI ESCAPE code ###
+prefix="\e["
+suffix="m"
+SGRRESET="${prefix}${suffix}"
+BOLD="${prefix}1${suffix}"
+RED="${prefix}31${suffix}"
+GREEN="${prefix}32${suffix}"
+YELLOW="${prefix}33${suffix}"
+BLUE="${prefix}34${suffix}"
+MAGENTA="${prefix}35${suffix}"
+CYAN="${prefix}36${suffix}"
+WHITE="${prefix}37${suffix}"
+### FLAG ###
+FLAG=false
+
+########## functions ##########
+# error message
+error(){
+    printf "${RED}[error]${SGRRESET}: ${1}\n"
+}
+
+# confirmation message
+confirmation(){
+    printf "${CYAN}[confirmation]${SGRRESET}: ${1}\n"
+}
+
+########## Title ##########
+printf "\n${BOLD}${MAGENTA}EASY ARCHLINUX INSTALLER (Base system)${SGRRESET}\n\n"
+
+########## set user password ##########
+if [[ ! -v EALI_USER_PASSWD ]]
+then
+    read -sp "Type user password : " EALI_USER_PASSWD 
+    echo "" 
+fi 
+
+echo ""
+
+sudo -K
+yay --sudoflags -S --noconfirm -Syu <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+# Display server
+sudo -K
+yay --sudoflags -S --noconfirm -S xorg-server <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+# Installation of xfce4 has a question
+# xfce4
+sudo -K
+sudo pacman -S xfce4
+
+# Display Driver
+printf "This is graphics hardware information of this computer \n"
+printf "==================================================\n"
+lspci -k | grep -EA3 "VGA|3D|Display"
+printf "==================================================\n"
+
+if [[ ! -v EALI_DISPLAY_DRIVER || "${EALI_DISPLAY_DRIVER})" = "" ]]
+then
+    while true
+    do
+        read -p "type display driver name : " EALI_DISPLAY_DRIVER
+        if [[ "${EALI_DISPLAY_DRIVER}" = "" ]]
+        then
+            confirmation "No display driver specified. Do you want to skip installing the display driver? "
+            read -p " y|Y for yes, any other key for No : " str
+            case $str in
+                y|Y)
+                    echo ""
+                    break;;
+                *)
+                    echo "Please try again";;
+            esac
+        else
+            confirmation " display driver is '${EALI_DISPLAY_DRIVER}'"
+            read -p " y|Y for yes, any other key for No : " str
+            case $str in
+                y|Y)
+                    echo ""
+                    break;;
+                *)
+                    echo "Please try again";;
+            esac
+        fi
+    done
+fi 
+
+
+
+# Display driver
+if [[ "${EALI_DISPLAY_DRIVER}" = "" ]]
+then
+    :
+else
+    sudo -K
+    yay --sudoflags -S --noconfirm -S  <<EOF
+${EALI_USER_PASSWD}
+EOF
+fi
+
+# Display manager
+sudo -K
+yay --sudoflags -S --noconfirm -S lightdm lightdm-gtk-greeter <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+# enable lightdm.service
+sudo -K
+sudo -S systemctl enable lightdm <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+# Audio
+sudo -K
+yay --sudoflags -S --noconfirm -S pulseaudio pavucontrol <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+# Display environment
+sudo -K
+yay --sudoflags -S --noconfirm -S xfce-goodies gvfs <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+# sudo -K
+# yay --sudoflags -S --noconfirm -S xorg-server lightdm lightdm-gtk-greeter pulseaudio pavucontrol <<EOF
+# ${EALI_USER_PASSWD}
+# EOF
+
+
+
+
+
+########## Install finished ##########
+
+printf "\n\n==============================\n"
+printf "${GREEN}${BOLD}Successfully Installed!!${SGRRESET} \n"
+printf "==============================\n\n"
