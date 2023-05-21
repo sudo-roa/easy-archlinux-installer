@@ -29,7 +29,7 @@ confirmation(){
 }
 
 ########## Title ##########
-printf "\n${BOLD}${MAGENTA}EASY ARCHLINUX INSTALLER (Base system)${SGRRESET}\n\n"
+printf "\n${BOLD}${MAGENTA}EASY ARCHLINUX INSTALLER (xfce4)${SGRRESET}\n\n"
 
 ########## set user password ##########
 if [[ ! -v EALI_USER_PASSWD ]]
@@ -37,9 +37,9 @@ then
     read -sp "Type user password : " EALI_USER_PASSWD 
     echo "" 
 fi 
-
 echo ""
 
+# Package upgrade
 sudo -K
 yay --sudoflags -S --noconfirm -Syu <<EOF
 ${EALI_USER_PASSWD}
@@ -50,11 +50,16 @@ sudo -K
 yay --sudoflags -S --noconfirm -S xorg-server <<EOF
 ${EALI_USER_PASSWD}
 EOF
+echo ""
 
 # Installation of xfce4 has a question
 # xfce4
 sudo -K
-sudo pacman -S xfce4
+sudo -S pacman -S xfce4<<EOF
+${EALI_USER_PASSWD}
+
+y
+EOF
 
 # Display Driver
 printf "This is graphics hardware information of this computer \n"
@@ -107,8 +112,14 @@ fi
 
 # Display manager
 sudo -K
-yay --sudoflags -S --noconfirm -S lightdm lightdm-gtk-greeter <<EOF
+yay --sudoflags -S --noconfirm -S lightdm lightdm-gtk-greeter light-locker <<EOF
 ${EALI_USER_PASSWD}
+EOF
+
+cat <<EOF > ${HOME}/.xprofile
+#!/bin/sh
+# "light-locker-command -1" screen lock 
+light-locker --lock-on suspend &
 EOF
 
 # enable lightdm.service
@@ -123,20 +134,118 @@ yay --sudoflags -S --noconfirm -S pulseaudio pavucontrol <<EOF
 ${EALI_USER_PASSWD}
 EOF
 
+# fonts
+sudo -K
+yay --sudoflags -S --noconfirm -S noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+cat <<EOF >~/local.conf.temp
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <alias>
+    <family>serif</family>
+    <prefer>
+      <family>Noto Serif</family>
+      <family>Noto Serif CJK JP</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>sans-serif</family>
+    <prefer>
+      <family>Noto Sans</family>
+      <family>Noto Sans CJK JP</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>monospace</family>
+    <prefer>
+      <family>Noto Sans Mono</family>
+      <family>Noto Sans Mono CJK JP</family>
+    </prefer>
+  </alias>
+</fontconfig>
+EOF
+
+sudo -K
+sudo -S cp ${HOME}/local.conf.temp /etc/fonts/local.conf<<EOF
+${EALI_USER_PASSWD}
+EOF
+fc-cache -f
+rm ${HOME}/local.conf.temp
+# Japanese input method
+sudo -K
+yay --sudoflags -S --noconfirm -S fcitx fcitx-mozc fcitx-configtool <<EOF
+${EALI_USER_PASSWD}
+EOF
+echo ""
+sudo -K
+sudo -S pacman -S fcitx-im <<EOF
+${EALI_USER_PASSWD}
+
+y
+EOF
+
+cat <<EOF >> ${HOME}/.xprofile
+
+# for fcitx
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+EOF
+fcitx
+
+# terminal
+sudo -K
+yay --sudoflags -S --noconfirm -S xterm xorg-xinit xorg-xrdb <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+cat <<EOF >~/.xinitrc
+[[ -f ~/.Xresources ]] && xrdb -merge -I{$HOME} ~/.Xresources
+EOF
+cat <<EOF >~/.Xresources
+xterm*termName:            xterm-256color
+xterm*locale:              true
+xterm*selectToClipboard:   true
+xterm*saveLines:           4096
+xterm*metaSendsEscape: true
+xterm*faceName: HackGen35Console-Reguler:size=10:antialias=false
+xterm*font: 7x13
+
+URxvt.perl-ext-common:      xim-onthespot
+URxvt.inputMethod:          fcitx
+URxvt*preeditType:          OnTheSpot
+EOF
+
+# fonts for terminal
+sudo -K
+yay --sudoflags -S --noconfirm -S ttf-hackgen <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+# utils
+sudo -K
+yay --sudoflags -S --noconfirm -S xorg-xset <<EOF
+${EALI_USER_PASSWD}
+EOF
+
+cat <<EOF > ${HOME}/locale.conf.temp
+LANG=ja_JP.UTF-8
+EOF
+
+sudo -K
+sudo -S cp ${HOME}/locale.conf.temp /etc/locale.conf <<EOF
+${EALI_USER_PASSWD}
+EOF
+rm ${HOME}/locale.conf.temp
+
 # Display environment
 sudo -K
 yay --sudoflags -S --noconfirm -S xfce-goodies gvfs <<EOF
 ${EALI_USER_PASSWD}
 EOF
-
-# sudo -K
-# yay --sudoflags -S --noconfirm -S xorg-server lightdm lightdm-gtk-greeter pulseaudio pavucontrol <<EOF
-# ${EALI_USER_PASSWD}
-# EOF
-
-
-
-
 
 ########## Install finished ##########
 
