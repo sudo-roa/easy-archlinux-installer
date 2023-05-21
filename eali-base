@@ -261,7 +261,7 @@ arch-chroot /mnt hwclock --systohc
 sed -e 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' -i /mnt/etc/locale.gen
 sed -e 's/#ja_JP.UTF-8 UTF-8/ja_JP.UTF-8 UTF-8/' -i /mnt/etc/locale.gen
 arch-chroot /mnt locale-gen
-echo "LANG=en_US.UTF-8" >/mnt/locale.conf
+echo "LANG=en_US.UTF-8" >/mnt/etc/locale.conf
 
 # Hostname
 echo ${EALI_HOSTNAME} > /mnt/etc/hostname
