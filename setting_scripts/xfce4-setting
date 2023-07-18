@@ -1,0 +1,55 @@
+#!/usr/bin/bash
+set -eu
+
+
+
+########## set user password ##########
+if [[ ! -v EALI_USER_PASSWD ]]
+then
+    read -sp "Type user password : " EALI_USER_PASSWD 
+    echo "" 
+fi 
+echo ""
+
+# Package upgrade
+# sudo -K
+# yay --sudoflags -S --noconfirm -Syu <<EOF
+# ${EALI_USER_PASSWD}
+# EOF
+
+# install archlinux-wallpaper
+# sudo -K
+# yay --sudoflags -S --noconfirm -S archlinux-wallpaper <<EOF
+# ${EALI_USER_PASSWD}
+# EOF
+
+
+# xfce4-session
+
+# xsettings
+
+# displays
+
+# xfce4-keyboard-shortcuts
+
+# xfce4-setting-manager
+
+# xfwm4
+
+# xfce4-panel
+
+# thunar
+
+# xfce4-desktop
+# まずはここから
+$DISPLAY_PATH=`xfconf-query -lvc xfce4-desktop | grep last-image | sed "s/ /\n/g" | head -n1`
+echo $DISPLAY_PATH
+# xfconf-query -c xfce4-desktop -p $DISPLAY_PATH -s /usr/share/backgrounds/archlinux/simple.png
+
+
+# pointers
+
+# xfce4-power-manager
+
+# xfce4-notifyd
+
