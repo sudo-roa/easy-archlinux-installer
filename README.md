@@ -15,7 +15,7 @@ Easy and quick to install Arch Linux
 - Disk partition plan
 - Hostname, root password, user name, user password
 ### ISO image
-Download ISO image [here](https://www.archlinux.jp/download/)
+Download ISO image [here](https://archlinux.org/download/)
 
 ### Network
 Use `ping archlinux.jp` command to check network connectivity
