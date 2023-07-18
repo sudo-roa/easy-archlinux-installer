@@ -18,10 +18,10 @@ echo ""
 # EOF
 
 # install archlinux-wallpaper
-# sudo -K
-# yay --sudoflags -S --noconfirm -S archlinux-wallpaper <<EOF
-# ${EALI_USER_PASSWD}
-# EOF
+sudo -K
+yay --sudoflags -S --noconfirm -S archlinux-wallpaper <<EOF
+${EALI_USER_PASSWD}
+EOF
 
 
 # xfce4-session
@@ -42,9 +42,9 @@ echo ""
 
 # xfce4-desktop
 # まずはここから
-$DISPLAY_PATH=`xfconf-query -lvc xfce4-desktop | grep last-image | sed "s/ /\n/g" | head -n1`
+DISPLAY_PATH=`xfconf-query -lvc xfce4-desktop | grep last-image | sed "s/ /\n/g" | head -n1`
 echo $DISPLAY_PATH
-# xfconf-query -c xfce4-desktop -p $DISPLAY_PATH -s /usr/share/backgrounds/archlinux/simple.png
+xfconf-query -c xfce4-desktop -p $DISPLAY_PATH -s /usr/share/backgrounds/archlinux/simple.png
 
 
 # pointers
@@ -53,3 +53,10 @@ echo $DISPLAY_PATH
 
 # xfce4-notifyd
 
+### extra software
+
+# plank
+sudo -K
+yay --sudoflags -S --noconfirm -S plank <<EOF
+${EALI_USER_PASSWD}
+EOF
