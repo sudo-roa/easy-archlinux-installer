@@ -24,10 +24,10 @@ fi
 echo ""
 
 # Package upgrade
-# sudo -K
-# yay --sudoflags -S --noconfirm -Syu <<EOF
-# ${EALI_USER_PASSWD}
-# EOF
+sudo -K
+yay --sudoflags -S --noconfirm -Syu <<EOF
+${EALI_USER_PASSWD}
+EOF
 
 # install archlinux-wallpaper
 sudo -K
@@ -84,10 +84,6 @@ xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=2;x=0;y=0"
 xfconf-query -c xfce4-panel -p /panels/panel-1/position-locked -s true
 xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -s 30
 xfconf-query -c xfce4-panel -p /plugins/plugin-1/button-icon -s /usr/share/pixmaps/archlinux-logo.svg
-
-
-
-
 
 ### thunar
 
