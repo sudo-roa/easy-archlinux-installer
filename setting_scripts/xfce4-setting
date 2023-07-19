@@ -1,6 +1,19 @@
 #!/usr/bin/bash
 set -eu
 
+########## VARIABLES ##########
+### ANSI ESCAPE code ###
+prefix="\e["
+suffix="m"
+SGRRESET="${prefix}${suffix}"
+BOLD="${prefix}1${suffix}"
+RED="${prefix}31${suffix}"
+GREEN="${prefix}32${suffix}"
+YELLOW="${prefix}33${suffix}"
+BLUE="${prefix}34${suffix}"
+MAGENTA="${prefix}35${suffix}"
+CYAN="${prefix}36${suffix}"
+WHITE="${prefix}37${suffix}"
 
 ########## set user password ##########
 if [[ ! -v EALI_USER_PASSWD ]]
@@ -23,39 +36,94 @@ ${EALI_USER_PASSWD}
 EOF
 
 
-# xfce4-session
+### xfce4-session
 
-# xsettings
+### xsettings
+# install midnight theme
+MIDNIGHT=midnight
+git clone https://github.com/i-mint/midnight.git ${MIDNIGHT}
+sudo -K
+sudo -S cp -r ${MIDNIGHT}/Midnight* /usr/share/themes <<EOF
+${EALI_USER_PASSWD}
+EOF
+rm -rf ${MIDNIGHT}
 
-# displays
+# install miya-icon-theme
+MIYA_ICON_THEME=Miya-icon-theme
+git clone https://github.com/yeyushengfan258/Miya-icon-theme.git ${MIYA_ICON_THEME}
+sh ./Miya-icon-theme/install.sh <<EOF
+${EALI_USER_PASSWD}
+EOF
+rm -rf Miya-icon-theme
 
-# xfce4-keyboard-shortcuts
+xfconf-query -c xsettings -p /Net/ThemeName -t string -s "Midnight-NightGreen"
+xfconf-query -c xsettings -p /Net/IconThemeName -t string -s "Miya-dark"
 
-# xfce4-setting-manager
+### displays
 
-# xfwm4
+### xfce4-keyboard-shortcuts
 
-# xfce4-panel
+### xfce4-setting-manager
 
-# thunar
+### xfwm4
 
-# xfce4-desktop
+### xfce4-panel
+xfconf-query -c xfce4-panel -p /panels/panel-1/length-adjust -t bool -s true
+# panel-1の裏にpanel-2を隠す作戦。
+xfconf-query -c xfce4-panel -p /panels/panel-2/size -s 16
+xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -s 16
+xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false
+xfconf-query -c xfce4-panel -p /panels/panel-2/length -s 100
+xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=9;x=100;y=100"
+xfconf-query -c xfce4-panel -p /panels/panel-2/position-locked -s true
+xfconf-query -c xfce4-panel -p /panels/panel-2/plugin-ids -rR
+xfconf-query -c xfce4-panel -p /panels/panel-2/enter-opacity -s 0
+
+xfconf-query -c xfce4-panel -p /panels/panel-1/size -s 30
+xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=2;x=0;y=0"
+xfconf-query -c xfce4-panel -p /panels/panel-1/position-locked -s true
+xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -s 30
+xfconf-query -c xfce4-panel -p /plugins/plugin-1/button-icon -s /usr/share/pixmaps/archlinux-logo.svg
+
+
+
+
+
+### thunar
+
+### xfce4-desktop
 # まずはここから
 DISPLAY_PATH=`xfconf-query -lvc xfce4-desktop | grep last-image | sed "s/ /\n/g" | head -n1`
 echo $DISPLAY_PATH
 xfconf-query -c xfce4-desktop -p $DISPLAY_PATH -s /usr/share/backgrounds/archlinux/simple.png
 
 
-# pointers
 
-# xfce4-power-manager
 
-# xfce4-notifyd
+
+### pointers
+
+### xfce4-power-manager
+
+### xfce4-notifyd
 
 ### extra software
 
 # plank
 sudo -K
-yay --sudoflags -S --noconfirm -S plank <<EOF
+yay --sudoflags -S --noconfirm -S plank plank-theme-bigsur <<EOF
 ${EALI_USER_PASSWD}
 EOF
+if [[ `cat .xprofile | grep plank` ]]
+then
+    echo "this file is already existed"
+else
+    echo "plank &" >> ~/.xprofile
+fi        
+
+
+########## Setting finished ##########
+
+printf "\n\n====================\n"
+printf "${GREEN}${BOLD}Setting completed!!${SGRRESET} \n"
+printf "====================\n\n"
