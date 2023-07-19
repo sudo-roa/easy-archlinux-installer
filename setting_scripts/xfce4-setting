@@ -2,7 +2,6 @@
 set -eu
 
 
-
 ########## set user password ##########
 if [[ ! -v EALI_USER_PASSWD ]]
 then
