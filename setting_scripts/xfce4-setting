@@ -80,7 +80,7 @@ xfconf-query -c xsettings -p /Net/IconThemeName -t string -s "Miya-dark"
 ### displays
 
 ### xfce4-keyboard-shortcuts
-/xfwm4/custom/<Super>Tab -s switch_window_key
+xfconf-query -c xfce4-keyboard-shortcuts -p "/xfwm4/custom/<Super>Tab" -r
 xfconf-query -c xfce4-keyboard-shortcuts --create -p "/commands/custom/<Super>Tab" -t string -s "/usr/bin/skippy-xd"
 
 ### xfce4-setting-manager
