@@ -29,11 +29,29 @@ yay --sudoflags -S --noconfirm -Syu <<EOF
 ${EALI_USER_PASSWD}
 EOF
 
+### extra software
 # install archlinux-wallpaper
 sudo -K
 yay --sudoflags -S --noconfirm -S archlinux-wallpaper <<EOF
 ${EALI_USER_PASSWD}
 EOF
+# plank
+sudo -K
+yay --sudoflags -S --noconfirm -S plank plank-theme-bigsur <<EOF
+${EALI_USER_PASSWD}
+EOF
+if [[ `cat .xprofile | grep plank` ]]
+then
+    echo "this file is already existed"
+else
+    echo "plank &" >> ~/.xprofile
+fi        
+# skippy-xd
+sudo -K
+yay --sudoflags -S --noconfirm -S skippy-xd-git <<EOF
+${EALI_USER_PASSWD}
+EOF
+
 
 
 ### xfce4-session
@@ -62,28 +80,126 @@ xfconf-query -c xsettings -p /Net/IconThemeName -t string -s "Miya-dark"
 ### displays
 
 ### xfce4-keyboard-shortcuts
+/xfwm4/custom/<Super>Tab -s switch_window_key
+xfconf-query -c xfce4-keyboard-shortcuts --create -p "/commands/custom/<Super>Tab" -t string -s "/usr/bin/skippy-xd"
 
 ### xfce4-setting-manager
 
 ### xfwm4
 
 ### xfce4-panel
-xfconf-query -c xfce4-panel -p /panels/panel-1/length-adjust -t bool -s true
 # panel-1の裏にpanel-2を隠す作戦。
-xfconf-query -c xfce4-panel -p /panels/panel-2/size -s 16
-xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -s 16
-xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false
-xfconf-query -c xfce4-panel -p /panels/panel-2/length -s 100
-xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=9;x=100;y=100"
-xfconf-query -c xfce4-panel -p /panels/panel-2/position-locked -s true
-xfconf-query -c xfce4-panel -p /panels/panel-2/plugin-ids -rR
-xfconf-query -c xfce4-panel -p /panels/panel-2/enter-opacity -s 0
+xfconf-query -lvc xfce4-panel > tempfile
 
-xfconf-query -c xfce4-panel -p /panels/panel-1/size -s 30
-xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=2;x=0;y=0"
-xfconf-query -c xfce4-panel -p /panels/panel-1/position-locked -s true
-xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -s 30
-xfconf-query -c xfce4-panel -p /plugins/plugin-1/button-icon -s /usr/share/pixmaps/archlinux-logo.svg
+if [[ `cat tempfile | grep /panels/panel-1/length-adjust` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-1/length-adjust -t bool -s true
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-1/length-adjust -t bool -s true
+fi     
+
+if [[ `cat tempfile | grep /panels/panel-2/size` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/size -s 16
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/size -t int -s 16
+fi
+
+if [[ `cat tempfile | grep /panels/panel-2/icon-size` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -s 16
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/iconsize -t int -s 16
+fi
+
+if [[ `cat tempfile | grep /panels/panel-2/length-adjust` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/length-adjust -t bool -s false
+fi
+
+if [[ `cat tempfile | grep -v /panels/panel-2/length-adjust | grep /panels/panel-2/length` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/length -s 100
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/length -t int -s 100
+fi
+
+if [[ `cat tempfile | grep /panels/panel-2/position` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=9;x=100;y=100"
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/position -t string -s "p=9;x=100;y=100"
+fi
+
+if [[ `cat tempfile | grep /panels/panel-2/position-locked` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/position-locked -s true
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/position-locked -t bool -s true
+fi
+
+if [[ `cat tempfile | grep /panels/panel-2/plugin-ids` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/plugin-ids -rR
+fi
+
+if [[ `cat tempfile | grep /panels/panel-2/enter-opacity` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/enter-opacity -s 0
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/enter-opacity -t int -s 0
+fi
+
+if [[ `cat tempfile | grep /panels/panel-2/leave-opacity` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/leave-opacity -s 0
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-2/leave-opacity -t int -s 0
+fi
+
+if [[ `cat tempfile | grep /panels/panel-1/size` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-1/size -s 30
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-1/size -t int -s 30
+fi
+
+if [[ `cat tempfile | grep /panels/panel-1/position` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=2;x=0;y=0"
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-1/position -t string -s "p=2;x=0;y=0"
+fi
+
+if [[ `cat tempfile | grep /panels/panel-1/position-locked` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-1/position-locked -s true
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-1/position-locked -t bool -s true
+fi
+
+if [[ `cat tempfile | grep /panels/panel-1/icon-size` ]]
+then
+    xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -s 30
+else
+    xfconf-query -c xfce4-panel --create -p /panels/panel-1/icon-size -t int -s 30
+fi
+
+if [[ `cat tempfile | grep /plugins/plugin-1/button-icon` ]]
+then
+    xfconf-query -c xfce4-panel -p /plugins/plugin-1/button-icon -s /usr/share/pixmaps/archlinux-logo.svg
+else
+    xfconf-query -c xfce4-panel --create -p /plugins/plugin-1/button-icon -t string -s "/usr/share/pixmaps/archlinux-logo.svg"
+fi
+
+if [[ `cat tempfile | grep /plugins/plugin-1/button-title` ]]
+then
+    xfconf-query -c xfce4-panel -p /plugins/plugin-1/button-title -s ""
+else
+    xfconf-query -c xfce4-panel --create -p /plugins/plugin-1/button-title -t string -s ""
+fi
 
 ### thunar
 
@@ -103,19 +219,7 @@ xfconf-query -c xfce4-desktop -p $DISPLAY_PATH -s /usr/share/backgrounds/archlin
 
 ### xfce4-notifyd
 
-### extra software
 
-# plank
-sudo -K
-yay --sudoflags -S --noconfirm -S plank plank-theme-bigsur <<EOF
-${EALI_USER_PASSWD}
-EOF
-if [[ `cat .xprofile | grep plank` ]]
-then
-    echo "this file is already existed"
-else
-    echo "plank &" >> ~/.xprofile
-fi        
 
 
 ########## Setting finished ##########
