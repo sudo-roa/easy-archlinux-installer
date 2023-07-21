@@ -35,6 +35,12 @@ sudo -K
 yay --sudoflags -S --noconfirm -S archlinux-wallpaper <<EOF
 ${EALI_USER_PASSWD}
 EOF
+# opera
+sudo -K
+yay --sudoflags -S --noconfirm -S opera discord slack<<EOF
+${EALI_USER_PASSWD}
+EOF
+
 # plank
 sudo -K
 yay --sudoflags -S --noconfirm -S plank plank-theme-bigsur <<EOF
@@ -45,7 +51,11 @@ then
     echo "this file is already existed"
 else
     echo "plank &" >> ~/.xprofile
-fi        
+fi
+
+mkdir -p $HOME/.config/plank/dock1/launchers
+cp -rf ./plank_launchers/* $HOME/.config/plank/dock1/launchers/
+
 # skippy-xd
 sudo -K
 yay --sudoflags -S --noconfirm -S skippy-xd-git <<EOF
